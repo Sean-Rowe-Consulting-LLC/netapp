@@ -1,14 +1,39 @@
-from typing import Union
+import json
 
-from fastapi import FastAPI
+import psycopg2-binary
 
-app = FastAPI()
+# Connect to RDS once at startup
+conn = psycopg2.connect(
+  host=os.environ['RDS_HOST'],
+  database=os.environ['RDS_DB_NAME'],
+  user=os.environ['RDS_USER'],
+  password=os.environ['RDS_PASSWORD']
+)
 
 
-@app.get("/server/costs/{item_id}")
-def get_server_cost(item_id: int, q: Union[str, None] = None):
-    return {"item_id": item_id, "q": q}
+def lambda_handler(event, context):
+  # Use a connection pool to reuse connections
+  cursor = conn.cursor()
 
+  sort_key = event.get('sortKey')
 
-@app.get("/server/costs")
-def
+  cursor.execute("SELECT * FROM server_costs ORDER BY " + sort_key)
+
+  server_costs = cursor.fetchall()
+
+  formatted_costs = []
+
+  for cost in server_costs:
+    formatted_cost = {
+      'name': cost[0],
+      'provider': cost[1],
+      # Format data
+    }
+    formatted_costs.append(formatted_cost)
+
+  cursor.close()
+
+  return {
+    'statusCode': 200,
+    'body': json.dumps(formatted_costs)
+  }
