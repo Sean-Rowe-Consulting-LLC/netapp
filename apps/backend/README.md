@@ -1,3 +1,3 @@
-# api
+# apps/backend
 
 Project description here.
