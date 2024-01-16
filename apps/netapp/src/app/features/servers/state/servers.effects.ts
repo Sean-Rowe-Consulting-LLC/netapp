@@ -13,8 +13,11 @@ export class ServersEffects {
     this.actions$.pipe(
       ofType(ServersActions.initServers),
       switchMap(() =>
-        this.serversService.getServers().pipe( // Call method in ServersService
-          map(servers => ServersActions.loadServersSuccess({ servers })),
+        this.serversService.getServers().pipe(
+          // Call method in ServersService
+          map((servers) => {
+            return ServersActions.loadServersSuccess({ servers });
+          }),
           catchError((error) => {
             console.error('Error', error);
             return of(ServersActions.loadServersFailure({ error }));

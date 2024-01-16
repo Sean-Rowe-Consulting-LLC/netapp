@@ -7,4 +7,5 @@ export interface ServersEntity {
   provider: string;
   monthly_cost: string;
   start_date: string;
+  total_cost?: string;
 }

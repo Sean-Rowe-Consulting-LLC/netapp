@@ -8,6 +8,7 @@ import { provideEffects } from '@ngrx/effects';
 import { provideStoreDevtools } from '@ngrx/store-devtools';
 import * as fromServers from './features/servers/state/servers.reducer';
 import { ServersEffects } from './features/servers/state/servers.effects';
+import { provideHttpClient, withFetch } from '@angular/common/http';
 
 export const appConfig: ApplicationConfig = {
   providers: [
@@ -16,13 +17,9 @@ export const appConfig: ApplicationConfig = {
     provideStoreDevtools({ logOnly: !isDevMode() }),
     provideEffects(),
     provideStore(),
-    provideEffects(ServersEffects),
-    provideState(fromServers.SERVERS_FEATURE_KEY, fromServers.serversReducer),
-    provideStoreDevtools({ logOnly: !isDevMode() }),
-    provideEffects(),
-    provideStore(),
     provideClientHydration(),
     provideRouter(appRoutes),
-    provideAnimations()
+    provideAnimations(),
+    provideHttpClient(withFetch())
   ]
 };
