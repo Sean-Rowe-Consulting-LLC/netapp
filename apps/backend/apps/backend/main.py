@@ -1,39 +1,42 @@
 import json
+import os
 
-import psycopg2-binary
-
-# Connect to RDS once at startup
-conn = psycopg2.connect(
-  host=os.environ['RDS_HOST'],
-  database=os.environ['RDS_DB_NAME'],
-  user=os.environ['RDS_USER'],
-  password=os.environ['RDS_PASSWORD']
-)
+import psycopg2  # Added this line
 
 
 def lambda_handler(event, context):
-  # Use a connection pool to reuse connections
-  cursor = conn.cursor()
+    conn = None
+    cur = None
 
-  sort_key = event.get('sortKey')
+    try:
+        # Get database connection details from environment variables
+        host = os.environ["host"]
+        user = os.environ["DB_USER"]
+        password = os.environ["DB_PASSWORD"]
+        database = os.environ["DB_NAME"]
 
-  cursor.execute("SELECT * FROM server_costs ORDER BY " + sort_key)
+        # Connect to database
+        conn_string = (
+            f"dbname='{database}' user='{user}' host='{host}' password='{password}'"
+        )
+        conn = psycopg2.connect(conn_string)
 
-  server_costs = cursor.fetchall()
+        # Create a new cursor
+        cur = conn.cursor()
 
-  formatted_costs = []
+        # Execute SQL command to fetch data
+        cur.execute("SELECT * FROM servers")
+        rows = cur.fetchall()
 
-  for cost in server_costs:
-    formatted_cost = {
-      'name': cost[0],
-      'provider': cost[1],
-      # Format data
-    }
-    formatted_costs.append(formatted_cost)
+        # Convert data to list of dicts
+        columns = [desc[0] for desc in cur.description]
+        data = [dict(zip(columns, row)) for row in rows]
 
-  cursor.close()
+        return {"statusCode": 200, "body": json.dumps(data)}
 
-  return {
-    'statusCode': 200,
-    'body': json.dumps(formatted_costs)
-  }
+    except Exception as e:
+        print("Database connection failed due to {}".format(e))
+        return {"statusCode": 500, "body": json.dumps("An error occurred")}
+    finally:
+        cur.close()
+        conn.close()
